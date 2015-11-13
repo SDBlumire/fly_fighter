@@ -1,0 +1,8 @@
+[package]
+name = "fly_fighter"
+version = "0.1.0"
+authors = ["Sam Blumire <sdblumire@gmail.com>"]
+
+[dependencies]
+piston_window = "*"
+piston = "*"
