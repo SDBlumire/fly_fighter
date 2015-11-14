@@ -7,6 +7,7 @@ mod custom_colors {
     pub const BLACK: [f32; 4] = [0.0, 0.0, 0.0, 1.0];
     pub const RED: [f32; 4] = [1.0, 0.0, 0.0, 1.0];
     pub const GREEN: [f32; 4] = [0.0, 1.0, 0.0, 1.0];
+    pub const BLUE: [f32; 4] = [0.0, 0.0, 1.0, 1.0];
 }
 use custom_colors::*;
 
@@ -30,17 +31,6 @@ fn main() {
                     let fighters = fighters.clone();
                     e.draw_2d(|c, g| {
                         clear(color, g);
-                        for fighter in fighters.clone() {
-                            rectangle(fighter.color,
-                                      [0.0, 0.0, 
-                                      fighter.size, 
-                                      fighter.size],
-                                      c.transform
-                                          .trans(fighter.x, fighter.y)
-                                          .rot_deg(fighter.rotation)
-                                          .trans(-fighter.size / 2.0, -fighter.size / 2.0),
-                                      g);
-                        }
                         for shot in shots.clone() {
                             rectangle(shot.color,
                                       [0.0, 0.0, 2.0, 6.0],
@@ -50,8 +40,21 @@ fn main() {
                                         .trans(-1.0, -3.0),
                                       g);
                         }
+                        for fighter in fighters.clone() {
+                            let r = fighter.size / 2.0;
+                            let fighter_transform = c.transform
+                                .trans(fighter.x, fighter.y)
+                                .rot_deg(fighter.rotation);
+                            let a = r / f64::to_radians(30.0).tan();
+                            let h = r / f64::to_radians(30.0).sin();
+                            polygon(fighter.color,
+                                    &[[0.0, 1.3 * h], [a * 0.9, -r * 1.1], [-a * 0.9, -r * 1.1]],
+                                    fighter_transform,
+                                    g);
+
+                        }
                         if fighters.clone().iter().filter(|f| f.alive).count() == 1 {
-                            state = GameState::Loading;
+                            reset(&mut shots, &mut state);
                             color = fighters.iter().filter(|f| f.alive).next().unwrap().color;
                         }
                     });
@@ -186,7 +189,15 @@ fn main() {
                 _ => {}
             }
         }
+        if let Some(resize) = e.resize_args() {
+            reset(&mut shots, &mut state);
+        }
     }
+}
+
+fn reset(shots: &mut Vec<Shot>, state: &mut GameState) {
+    *state = GameState::Loading;
+    *shots = Vec::new();
 }
 
 #[derive(Eq, PartialEq, Clone)]
@@ -227,7 +238,7 @@ impl Fighter {
             keybinds: keybinds,
             shoot_cd_max: 1.0,
             shoot_cd: 0.0,
-            speed: 0.02,
+            speed: 1.5,
 
             alive: true,
             yaw_c: false,
@@ -246,8 +257,8 @@ impl Fighter {
         self.rotation += ammount;
     }
     fn forward(&mut self, distance: f64) {
-        self.x -= self.rotation.to_radians().sin().to_degrees() * distance * self.speed;
-        self.y += self.rotation.to_radians().cos().to_degrees() * distance * self.speed;
+        self.x -= self.rotation.to_radians().sin() * distance * self.speed;
+        self.y += self.rotation.to_radians().cos() * distance * self.speed;
     }
 }
 
@@ -270,8 +281,8 @@ impl Shot {
         }
     }
     fn forward(&mut self, distance: f64) {
-        self.x -= self.rotation.to_radians().sin().to_degrees() * distance * self.speed;
-        self.y += self.rotation.to_radians().cos().to_degrees() * distance * self.speed;
+        self.x -= self.rotation.to_radians().sin() * distance * self.speed;
+        self.y += self.rotation.to_radians().cos() * distance * self.speed;
     }
 }
 
